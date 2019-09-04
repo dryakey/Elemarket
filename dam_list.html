@@ -40,27 +40,215 @@
 
 		<link href="media/css/uniform.default.css" rel="stylesheet" type="text/css" />
 
-		<!-- END GLOBAL MANDATORY STYLES -->
-
-		<!-- BEGIN PAGE LEVEL STYLES -->
-
 		<link rel="stylesheet" type="text/css" href="media/css/select2_metro.css" />
 
 		<link rel="stylesheet" href="media/css/DT_bootstrap.css" />
-
-		<!-- END PAGE LEVEL STYLES -->
-
 		<link rel="shortcut icon" href="media/image/favicon.ico" />
+
+		<script src="media/js/jquery-1.10.1.min.js" type="text/javascript"></script>
+
+		<script src="media/js/jquery-ui-1.10.1.custom.min.js" type="text/javascript"></script>
+
+		<script src="media/js/bootstrap.min.js" type="text/javascript"></script>
+		<script type="text/javascript" src="js/bootstrap-datetimepicker.min.js"></script>
+		<link rel="stylesheet" href="css/bootstrap-datetimepicker.css" />
+		<script type="text/javascript" src="js/locales/bootstrap-datetimepicker.zh-CN.js"></script>
+		<script type="text/javascript" src="js/util.js"></script>
+		<script>
+			$(function() {
+
+				//输入开始日期和结束日期
+				//定位div上的id，不是input上id，否则后面两个小图标会失效
+				$("#startdiv").datetimepicker({
+					pickerPosition: "bottom-right",
+					language: 'zh-CN',
+					format: "yyyy-mm-dd",
+					weekStart: 1,
+					todayBtn: 1,
+					autoclose: 1,
+					todayHighlight: 1,
+					startView: 2,
+					minView: 2,
+					forceParse: 0
+				});
+				$("#endDiv").datetimepicker({
+					pickerPosition: "bottom-right",
+					language: 'zh-CN',
+					format: "yyyy-mm-dd",
+					weekStart: 1,
+					todayBtn: 1,
+					autoclose: 1,
+					todayHighlight: 1,
+					startView: 2,
+					minView: 2,
+					forceParse: 0
+				});
+
+				$('#startdiv').unbind("change");
+				$('#startdiv').change(function() {
+					$('#endDiv').datetimepicker('setStartDate', $("#start").val());
+				});
+				$('#endDiv').unbind("change");
+				$('#endDiv').change(function() {
+					$('#startdiv').datetimepicker('setEndDate', $("#end").val());
+				});
+			});
+
+			function clearForm() {
+				$('#start').val('');
+				$('#end').val('');
+				//用于解决清空后，前后日期还会关联的问题
+				//$('.input-group-addon:has(span.glyphicon-remove)').click();
+
+			}
+
+			function query() {
+				var start = $('#start').val();
+				var end = $('#end').val();
+				if(start == '' || end == '') {
+					alert("请先选择查询的起止日期!")
+					return;
+				}
+				var action = $('#action').html();
+				if(action == "queryDam") {
+					tableName = $("#second").val();
+					tableNameText = $("#first").find("option:selected").text() + $("#second").find("option:selected").text();
+					//				alert(tableNameText);
+					//				alert(tableName);
+				} else {
+					tableName = undefined;
+				}
+				var num = $('#num').val();
+				var page = $('#page').html();
+				$.ajax({
+						url: getUrl(),
+						method: "post",
+						async: true,
+						timeout: 10000,
+						data: {
+							"action": action,
+							"startDate": start,
+							"endDate": end,
+							"page": page,
+							"num": num,
+							"tableName": tableName,
+						},
+						dataType: "json",
+						success: function(data) {
+							if(data.result == "success") {
+								if(action == 'queryDamMw') {
+									$("#queryDamMw").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamMw").append("<tr class='odd gradeX'><td style='display: none;'>" + data.msg[i].id + "</td><td><input type='checkbox' class='checkboxes' value='1' /></td><td>" + timestampToTime(data.msg[i].time) + "</td><td class='hidden-480'>" + data.msg[i].value + "</td></tr>");
+									}
+								} else if(action == 'queryDamOutPlan') {
+									$("#queryDamOutPlan").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamOutPlan").append("<tr class='odd gradeX'>	<td><input type='checkbox' class='checkboxes' value='1' /></td><div style='display: none;'>" + data.msg[i].id + "</div><td>" + timestampToTime(data.msg[i].time) + "</td><td class='hidden-480'>" + data.msg[i].value + "</td></tr>");
+									}
+								} else if(action == 'queryDamAvePrice') {
+									$("#queryDamAvePrice").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamAvePrice").append("<tr class='odd gradeX'><td><input type='checkbox' class='checkboxes' value='1' /></td><div style='display: none;'>" + data.msg[i].id + "</div><td>" + timestampToTime(data.msg[i].time) + "</td><td class='hidden-480'>" + data.msg[i].winPrice + "</td><td class='hidden-480'>" + data.msg[i].geAvePrice + "</td><td class='hidden-480'>" + data.msg[i].userAvePrice + "</td></tr>");
+									}
+								} else if(action == 'queryDamLoadForecast') {
+									$("#queryDamLoadForecast").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamLoadForecast").append("	<tr class='odd gradeX'><td><input type='checkbox' class='checkboxes' value='1' /></td><div style='display: none;'>" + data.msg[i].id + "</div><td>" + timestampToTime(data.msg[i].time) + "</td><td>" + data.msg[i].value + "</td></tr>");
+									}
+								} else if(action == 'queryDam') {
+									$("#queryDam").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										if(data.msg[i].state=="0"){
+											state="停";
+										}else{
+											state="启";
+										}
+										$("#queryDam").append("<tr class = 'odd gradeX' > <td> <input type = 'checkbox'class = 'checkboxes'value = '1' / > </td><div style='display: none;'>"+data.msg[i].id+"</div> <td> "+timestampToTime(data.msg[i].time) +" </td><td class='hidden-480'>"+tableNameText+"</td > <td class = 'hidden-480'>"+state+"</td><td class='hidden-480'>"+data.msg[i].outputPower+"</td > <td class = 'hidden-480'> "+data.msg[i].nodePrice+" </td><td class='hidden-480'>"+data.msg[i].sysPrice+"</td> <td class = 'hidden-480' > "+data.msg[i].blockPrice+" </td><td class='hidden-480'>"+data.msg[i].lossPrice+"</td > </tr>");
+										}
+									}
+									return;
+								} else if(data.result == "fail") {
+									alert(data.msg);
+									return;
+								}
+							},
+							error: function(xhr) {
+
+							}
+						});
+
+				}
+
+				function prePage() {
+					var page = $('#page').html();
+					if(page == 1) {
+						alert("当前已是第一页");
+						return;
+					}
+					$('#page').html(page - 1);
+					query();
+				}
+
+				function nextPage() {
+					var page = $('#page').html();
+					page = parseInt(page) + 1;
+					$('#page').html(page);
+					query();
+				}
+
+				function tab1() {
+					$('#action').html("queryDamMw");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab2() {
+					$('#action').html("queryDamOutPlan");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab3() {
+					$('#action').html("queryDamAvePrice");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab4() {
+					$('#action').html("queryDamLoadForecast");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab5() {
+					$('#action').html("queryDam");
+					$("#damPlant").css("display", "block");
+				}
+
+				function change() {
+					var x = document.getElementById("first");
+					var y = document.getElementById("second");
+					y.options.length = 0; // 清除second下拉框的所有内容
+					if(x.selectedIndex == 0) {
+						y.options.add(new Option("#1", 0, false, true));
+						y.options.add(new Option("#2", 1)); // 默认选中省会城市
+					}
+
+					if(x.selectedIndex == 1) {
+						y.options.add(new Option("#1", 2, false, true));
+						y.options.add(new Option("#2", 3)); // 默认选中省会城市
+						y.options.add(new Option("#3", 4));
+						y.options.add(new Option("#4", 5));
+					}
+					if(x.selectedIndex == 2) {
+						y.options.add(new Option("#11", 6, false, true));
+						y.options.add(new Option("#12", 7)); // 默认选中省会城市
+						y.options.add(new Option("#21", 8));
+						y.options.add(new Option("#22", 9));
+					}
+				}
+		</script>
 
 	</head>
 
-	<!-- END HEAD -->
-
-	<!-- BEGIN BODY -->
-
 	<body class="page-header-fixed">
-
-		<!-- BEGIN HEADER -->
 
 		<div class="header navbar navbar-inverse navbar-fixed-top">
 
@@ -88,14 +276,7 @@
 
 					</a>
 
-					<!-- END RESPONSIVE MENU TOGGLER -->
-
-					<!-- BEGIN TOP NAVIGATION MENU -->
-
 					<ul class="nav pull-right">
-
-
-						<!-- BEGIN USER LOGIN DROPDOWN -->
 
 						<li class="dropdown user">
 
@@ -123,9 +304,13 @@
 						<li class="divider"></li>
 						-->
 
-								<li><a href="lock.html"><i class="icon-lock"></i> 锁定账号</a></li>
+								<li>
+									<a href="lock.html"><i class="icon-lock"></i> 锁定账号</a>
+								</li>
 
-								<li><a href="login.html"><i class="icon-key"></i> 登出系统</a></li>
+								<li>
+									<a href="login.html"><i class="icon-key"></i> 登出系统</a>
+								</li>
 
 							</ul>
 
@@ -230,13 +415,21 @@
 
 								<ul class="sub-menu">
 
-									<li><a href="#">最新日报</a></li>
+									<li>
+										<a href="#">最新日报</a>
+									</li>
 
-									<li><a href="#">最新周报</a></li>
+									<li>
+										<a href="#">最新周报</a>
+									</li>
 
-									<li><a href="#">最新月报</a></li>
+									<li>
+										<a href="#">最新月报</a>
+									</li>
 
-									<li><a href="#">历史报表</a></li>
+									<li>
+										<a href="#">历史报表</a>
+									</li>
 
 								</ul>
 
@@ -282,13 +475,21 @@
 
 								<ul class="sub-menu">
 
-									<li><a href="#">最新日报</a></li>
+									<li>
+										<a href="#">最新日报</a>
+									</li>
 
-									<li><a href="#">最新周报</a></li>
+									<li>
+										<a href="#">最新周报</a>
+									</li>
 
-									<li><a href="#">最新月报</a></li>
+									<li>
+										<a href="#">最新月报</a>
+									</li>
 
-									<li><a href="#">历史报表</a></li>
+									<li>
+										<a href="#">历史报表</a>
+									</li>
 
 								</ul>
 
@@ -352,14 +553,7 @@
 
 						<div class="span12">
 
-
 							<!-- BEGIN PAGE TITLE & BREADCRUMB-->
-
-							<h3 class="page-title">
-
-								控制面板 <small>在此浏览你需要的图表</small>
-
-							</h3>
 
 							<ul class="breadcrumb">
 
@@ -373,7 +567,9 @@
 
 								</li>
 
-								<li><a href="#">控制面板</a></li>
+								<li>
+									<a href="dam_list.html">数据查询</a>
+								</li>
 
 							</ul>
 
@@ -382,59 +578,92 @@
 
 								<div class="portlet-title">
 
-									<div class="caption"><i class="icon-user"></i>Table</div>
+									<div class="caption"><i class="icon-user"></i>数据</div>
 
 									<div class="actions">
 
-										<a href="#" class="btn blue"><i class="icon-pencil"></i>添加</a>
+										<a href="#" class="btn blue"><i class="icon-pencil"></i>添加记录</a>
+									</div>
+								</div>
+								<hr>
+								<div id="" style="overflow: hidden;">
 
-										<div class="btn-group">
-
-											<a class="btn green" href="#" data-toggle="dropdown">
-
-												<i class="icon-cogs"></i> 工具
-
-												<i class="icon-angle-down"></i>
-
-											</a>
-
-											<ul class="dropdown-menu pull-right">
-
-												<li><a href="#"><i class="icon-pencil"></i> 编辑 </a></li>
-
-												<li><a href="#"><i class="icon-trash"></i> 删除 </a></li>
-
-												<!-- <li class="divider"></li>
-							
-												<li><a href="#"><i class="i"></i> Make admin</a></li> -->
-
-											</ul>
-
-										</div>
-
+									<div id="startdiv" class="input-group date " style="float: left;margin-left: 10px;">
+										<input id="start" style="width: 150px;" name="start" class="form-control" type="text" value="" placeholder="请输入开始日期" readonly="readonly"> <span class="input-group-addon"> <span
+                                                class="glyphicon glyphicon-remove"></span>
+										</span> <span class="input-group-addon"> <span
+                                                class="glyphicon glyphicon-calendar"></span>
+										</span>
+									</div>
+									<!--<td></td>-->
+									<!--	<br>-->
+									<div id="endDiv" class="input-group date " style="float: left;margin-left: 20px;">
+										<input id="end" name="end" style="width: 150px;" class="form-control" type="text" value="" placeholder="请输入结束日期" readonly="readonly"> <span class="input-group-addon"> <span
+                                                class="glyphicon glyphicon-remove"></span>
+										</span> <span class="input-group-addon"> <span
+                                                class="glyphicon glyphicon-calendar"></span>
+										</span>
 									</div>
 
+									<button type="button" class="btn btn-sm btn-warning" style="float: left;height: 30px;margin-left: 50px ;" onclick="clearForm()">清空</button>
+
+								</div>
+								<div id="" style="margin-left: 10px;line-height: 30px; ">
+									<div id="" style="float: left;">
+										<select id="num" style="width: 100px;">
+											<option value="10">10</option>
+											<option value="20">20</option>
+											<option value="25">25</option>
+											<option value="30">30</option>
+										</select>每页
+									</div>
+
+									<div id="damPlant" style="float: left;margin-left:50px;display: none;">
+
+										<select id="first" style="width: 100px;" onChange="change()">
+											<option selected="selected">长兴</option>
+											<option>玉环</option>
+											<option>桐乡</option>
+										</select>
+
+										<select id="second" style="width: 100px;">
+											<option selected="selected" value="0">#1机</option>
+											<option value="1">#2机</option>
+										</select>
+
+									</div>
+									<button type="button" class="btn btn-sm btn-warning" style="height: 30px;margin-left: 50px ;" onclick="query()">开始查询</button>
 								</div>
 
+								<span id='action' style="display: none;">queryDamMw</span>
 								<div class="portlet-body">
 
-									<ul class="nav nav-tabs">
+									<ul id="tableName" class="nav nav-tabs">
 
-										<li class="active"><a href="#tab_1_1" data-toggle="tab">系统固定出力</a></li>
+										<li class="active" onclick="tab1()">
+											<a href="#tab_1_1" data-toggle="tab">系统固定出力</a>
+										</li>
 
-										<li><a href="#tab_1_2" data-toggle="tab">外来电计划</a></li>
+										<li>
+											<a href="#tab_1_2" onclick="tab2()" data-toggle="tab">外来电计划</a>
+										</li>
 
-										<li><a href="#tab_1_3" data-toggle="tab">日前出清平均电价</a></li>
+										<li>
+											<a href="#tab_1_3" onclick="tab3()" data-toggle="tab">日前出清平均电价</a>
+										</li>
 
-										<li><a href="#tab_1_4" data-toggle="tab">系统负荷预测</a></li>
+										<li>
+											<a href="#tab_1_4" onclick="tab4()" data-toggle="tab">系统负荷预测</a>
+										</li>
 
-										<li><a href="#tab_1_5" data-toggle="tab">各机组日前出清结果</a></li>
+										<li>
+											<a href="#tab_1_5" onclick="tab5()" data-toggle="tab">各机组日前出清结果</a>
+										</li>
 
 									</ul>
-
 									<div class="tab-content">
 
-										<div class="tab-pane profile-classic row-fluid" id="tab_1_1">
+										<div class="tab-pane profile-classic row-fluid active" id="tab_1_1">
 											<table class="table table-striped table-bordered table-hover" id="sample_1">
 
 												<thead>
@@ -442,32 +671,20 @@
 													<tr>
 
 														<th style="width:8px;"><input type="checkbox" class="group-checkable" data-set="#sample_1 .checkboxes" /></th>
-
+														<div style="display: none;">id</div>
 														<th>时间</th>
-
 														<th class="hidden-480">预测值</th>
 
 													</tr>
 
 												</thead>
 
-												<tbody>
-
-													<tr class="odd gradeX">
-
-														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
-														<td>00:15</td>
-
-														<td class="hidden-480">2369.00</td>
-
-													</tr>
+												<tbody id="queryDamMw">
 
 												</tbody>
 
 											</table>
 										</div>
-
 
 										<div class="tab-pane profile-classic row-fluid" id="tab_1_2">
 											<table class="table table-striped table-bordered table-hover" id="sample_2">
@@ -482,24 +699,18 @@
 
 														<th class="hidden-480">计划有功</th>
 
-
-
 													</tr>
 
 												</thead>
 
-												<tbody>
+												<tbody id="queryDamOutPlan">
 
 													<tr class="odd gradeX">
 
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>00:30</td>
-
 														<td class="hidden-480">23571</td>
-
-
-
 													</tr>
 
 												</tbody>
@@ -528,20 +739,15 @@
 
 												</thead>
 
-												<tbody>
+												<tbody id="queryDamAvePrice">
 
 													<tr class="odd gradeX">
-
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>0:45:00</td>
-
 														<td class="hidden-480">26257.98</td>
-
 														<td class="hidden-480">360.00</td>
-
 														<td class="hidden-480">360.00</td>
-
 													</tr>
 
 												</tbody>
@@ -566,16 +772,13 @@
 
 												</thead>
 
-												<tbody>
+												<tbody id="queryDamLoadForecast">
 
 													<tr class="odd gradeX">
-
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>01:00</td>
-
 														<td>22908</td>
-
 													</tr>
 
 												</tbody>
@@ -596,24 +799,29 @@
 
 														<th class="hidden-480">机组名称</th>
 
-														<th class="hidden-480">日前出清中标电量(MW)</th>
-
+														<th class="hidden-480">机组启停状态</th>
+														<th class="hidden-480">机组出力(MW)</th>
+														<th class="hidden-480">电能节点价格(元/MWh)</th>
+														<th class="hidden-480">系统电能价格(元/MWh)</th>
+														<th class="hidden-480">阻塞价格</th>
+														<th class="hidden-480">网损价格</th>
 													</tr>
 
 												</thead>
 
-												<tbody>
+												<tbody id='queryDam'>
 
 													<tr class="odd gradeX">
-
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>0:45:00</td>
-
 														<td class="hidden-480">玉环1</td>
-
 														<td class="hidden-480">26257.98</td>
-
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
 													</tr>
 
 												</tbody>
@@ -623,6 +831,10 @@
 
 									</div>
 
+								</div>
+								<div>当前第 <span id="page">1</span> 页
+									<button id="pre" onclick="prePage()">上一页</button>
+									<button id="nex" onclick="nextPage()">下一页</button>
 								</div>
 							</div>
 						</div>
@@ -667,348 +879,6 @@
 
 		</div>
 
-		<!-- END FOOTER -->
-
-		<!-- BEGIN JAVASCRIPTS(Load javascripts at bottom, this will reduce page load time) -->
-
-		<!-- BEGIN CORE PLUGINS -->
-
-		<script src="media/js/jquery-1.10.1.min.js" type="text/javascript"></script>
-
-		<script src="media/js/jquery-migrate-1.2.1.min.js" type="text/javascript"></script>
-
-		<!-- IMPORTANT! Load jquery-ui-1.10.1.custom.min.js before bootstrap.min.js to fix bootstrap tooltip conflict with jquery ui tooltip -->
-
-		<script src="media/js/jquery-ui-1.10.1.custom.min.js" type="text/javascript"></script>
-
-		<script src="media/js/bootstrap.min.js" type="text/javascript"></script>
-
-		<!--[if lt IE 9]>
-		
-			<script src="media/js/excanvas.min.js"></script>
-		
-			<script src="media/js/respond.min.js"></script>  
-		
-			<![endif]-->
-
-		<script src="media/js/jquery.slimscroll.min.js" type="text/javascript"></script>
-
-		<script src="media/js/jquery.blockui.min.js" type="text/javascript"></script>
-
-		<script src="media/js/jquery.cookie.min.js" type="text/javascript"></script>
-
-		<script src="media/js/jquery.uniform.min.js" type="text/javascript"></script>
-
-		<!-- END CORE PLUGINS -->
-
-		<!-- BEGIN PAGE LEVEL PLUGINS -->
-
-		<script type="text/javascript" src="media/js/select2.min.js"></script>
-
-		<script type="text/javascript" src="media/js/jquery.dataTables.js"></script>
-
-		<script type="text/javascript" src="media/js/DT_bootstrap.js"></script>
-
-		<!-- END PAGE LEVEL PLUGINS -->
-
-		<!-- BEGIN PAGE LEVEL SCRIPTS -->
-
-		<script src="media/js/app.js"></script>
-
-		<script src="media/js/table-managed.js"></script>
-
-		<script>
-			jQuery(document).ready(function() {
-
-				App.init();
-
-				TableManaged.init();
-
-			});
-		</script>
-<!-- 		<script type="text/javascript">
-			$(function() {
-
-				$("#table1").DataTable({
-					// 是否允许检索
-					"searching": false,
-					// 是否允许排序
-					"ordering": true,
-					// 初期排序列
-					//"order": [[0,'asc'],[1,'desc']],
-					// 是否显示情报 就是"当前显示1/100记录"这个信息
-					"info": true,
-					// 是否允许翻页，设成false，翻页按钮不显示
-					"paging": false,
-					// 水平滚动条
-					"scrollX": false,
-					// 垂直滚动条
-					"scrollY": false,
-					// 件数选择功能 默认true
-					"lengthChange": false,
-					// 件数选择下拉框内容
-					//"lengthMenu": [10, 25, 50, 75, 100],
-					// 每页的初期件数 用户可以操作lengthMenu上的值覆盖
-					"pageLength": 50,
-					//翻页按钮样式
-					// numbers:数字
-					// simple:前一页，后一页
-					// simple_numbers:前一页，后一页，数字
-					// full:第一页，前一页，后一页，最后页
-					//full_numbers:第一页，前一页，后一页，最后页，数字
-					//first_last_numbers:第一页，最后页，数字
-					"pagingType": "full_numbers",
-					// 行样式应用 指定多个的话，第一行tr的class为strip1，第二行为strip2，第三行为strip3.
-					// 第四行以后又开始从strip1循环。。。 如果想指定成斑马条状，这里的class必须指定为2个。
-					"stripeClasses": ['strip1', 'strip2'],
-					// 自动列宽
-					"autoWidth": true,
-					// 是否表示 "processing" 加载中的信息，这个信息可以修改
-					"processing": true,
-					// 每次创建是否销毁以前的DataTable,默认false
-					"destroy": false,
-					// 控制表格各种信息的表示位置（比较复杂） 默认:lfrtip
-					// 具体参考：https://datatables.net/reference/option/dom
-					"dom": 'lrtip',
-					"language": {
-						"processing": "DataTables is currently busy",
-						// 当前页显示多少条
-						"lengthMenu": "Display _MENU_ records",
-						// _START_（当前页的第一条的序号） ,_END_（当前页的最后一条的序号）,_TOTAL_（筛选后的总件数）,
-						// _MAX_(总件数),_PAGE_(当前页号),_PAGES_（总页数）
-						"info": "显示 第 _PAGE_页 共 _PAGES_页",
-						// 没有数据的显示（可选），如果没指定，会用zeroRecords的内容
-						"emptyTable": "表格内没有可用信息",
-						// 筛选后，没有数据的表示信息，注意emptyTable优先级更高
-						"zeroRecords": "No records to display",
-						// 千分位的符号，只对显示有效，默认就是","  一般不要改写
-						//"thousands": "'",
-						// 小数点位的符号，对输入解析有影响，默认就是"." 一般不要改写
-						//"decimal": "-",
-						// 翻页按钮文字控制
-						"paginate": {
-							"first": "First page",
-							"last": "Last page",
-							"next": "Next page",
-							"previous": "Previous page"
-						},
-						// Client-Side用，Server-Side不用这个属性
-						"loadingRecords": "Please wait - loading..."
-					},
-					// 默认是false
-					// 如果设为true，将只渲染当前也的html，速度会很快，但是通过API就访问不到所有页的数据，有利有弊
-					//"deferRender": false,
-					// 服务器端处理方式
-					"serverSide": true,
-
-					// ajax选项 可以直接简单指定成请求的文件
-					//"ajax": "data.json",
-					// 也可以用对象来配置，更加灵活
-					"ajax": {
-						// url可以直接指定远程的json文件，或是MVC的请求地址 /Controller/Action
-						url: "data.json",
-						type: 'POST',
-						// 传给服务器的数据，可以添加我们自己的查询参数
-						data: function(param) {
-							param.opportunityNO = $('#txtSearch').val();
-							return param;
-						},
-						//用于处理服务器端返回的数据。 dataSrc是DataTable特有的
-						dataSrc: function(myJson) {
-							if (myJson.timeout) {
-								return "";
-							}
-							return myJson;
-						}
-					},
-					//指定用于行ID的属性名 默认是：DT_RowId
-					"rowId": 'staffId',
-					// 列定义
-					"columns": [{
-							// data 可以是属性名，或嵌套属性（WORKTM1.ID）,数组ArrOne[,] 用中括号中的字符连接数组后返回。
-							"data": "WORKTM1",
-							// 这里的class会应用到td上面
-							"className": "dt-body-right",
-							// 列宽
-							"width": 40,
-							// 很灵活，描绘每个单元格
-							// data：当前cell的data，这个data和type有关
-							// type：filter,display,type,sort
-							// row:当前行数据
-							// https://datatables.net/reference/option/columns.render
-							"render": function(data, type, row, meta) {
-								return type === 'display' && data.length > 40 ?
-									'<span title="' + data + '">' + data.substr(0, 38) + '...</span>' : data;
-
-							},
-							// 是否可排序 默认值：true
-							"orderable": true,
-							// 指定当前列排序操作的时候，用哪一列（几列）的数据进行真正的排序（通常是隐藏的）
-							"orderData": [0, 1],
-							// 这个属性 和type属性相似，指定排序时候这一列该怎么转换数据,
-							//需要用到其他的插件 详细： https://datatables.net/plug-ins/sorting/
-							"orderDataType": "dom-text",
-							// 是否显示当前列 默认值：true
-							"visible": false,
-							// 是否允许搜索此列 默认值：true
-							"searchable": false,
-							//这个属性仅Client-Side有效， Server-Side在服务器端排序 
-							//主要用于排序和筛选，指定当前列作为什么类型进行解析
-							//内置值：date，num，num-fmt，html-num，html-num-fmt，html，string
-							// 还可以用其他插件提供的类型 ：详细： https://datatables.net/plug-ins/sorting/
-							// 有html开头的，都会讲html标签先移除后进行数据处理
-							"type": "html",
-							// 列头文字，如果没有指定thead，则会生成。如何指定了thead，则会覆盖当前列头文字
-							"title": "My column title",
-							// defaultContent:默认值，属性值为null或undefined就会用这个值
-							"defaultContent": "<i>Not set</i>",
-							// 单元格类型："th","td"
-							"cellType": "td",
-							// 单元格创建完后的回调，可以作为render的补充
-							// cell:TD的dom
-							// cellData:原始的单元格数据，如何render中进行了格式化，用$(cell).html()来取格式化后的数据
-							// rowData:行数据
-							// row:行号
-							// col:列号
-							"createdCell": function(cell, cellData, rowData, row, col) {
-								if (cellData < 1) {
-									$(td).css('color', 'red')
-								}
-							}
-						},
-						{
-							"data": "WORKTM2",
-							"className": "dt-body-right",
-							"width": 40
-						},
-						{
-							"data": "WORKTM3",
-							"className": "dt-body-right",
-							"width": 40
-						},
-						{
-							"data": "WORKTM4",
-							"className": "dt-body-right",
-							"width": 40
-						},
-						{
-							"data": "RESTDAY1",
-							"className": "dt-body-right",
-							"width": 40
-						},
-						{
-							"data": "RESTDAY2",
-							"className": "dt-body-right",
-							"width": 40
-						},
-						{
-							"data": "RESTDAY3",
-							"className": "dt-body-right",
-							"width": 40
-						},
-						{
-							"data": "RESTDAY4",
-							"className": "dt-body-right",
-							"width": 40
-						},
-						{
-							"data": "RESTDAY5",
-							"className": "dt-body-right",
-							"width": 40
-						}
-					],
-					// 和上面的columns类似，columns可以定义的属性，都可以在这里定义，
-					// 另外增加targets属性用于指定列范围（可以多列）
-					// 优先级：上面的columns高于columnDefs
-					columnDefs: [{
-						targets: [0, 2],
-						render: function(data, type, row, meta) {
-							if (type === 'display') {
-								var ctemp = $(".dayinfo").children().eq(meta.col).attr("class");
-								var cname = ctemp ? ctemp : "";
-								var readonly = $(".dayinfo").children().eq(meta.col).attr("data-fixed") == "fixed" ? "readonly" : "";
-								return '<input type="input" class="form-control dt-body-center ' + cname + '" ' + readonly + ' value="' +
-									data + '">';
-							}
-							return data;
-						},
-					}],
-					// 每一行创建完调用的函数
-					"createdRow": function(row, data, dataIndex) {
-						// row : tr dom
-						// data: row data
-						// dataIndex:row data's index
-						if (data[4] == "A") {
-							$(row).addClass('important');
-						}
-					},
-					// 每一行被创建，但还没有被加载到document中，这个函数优先于createdRow
-					// 个人觉得用createdRow更好
-					"rowCallback": function(row, data, index) {
-						// row : tr dom
-						// data: row data
-						// index:row data's index
-						if (data[4] == "A") {
-							$('td:eq(4)', row).html('<b>A</b>');
-						}
-					},
-					//thead被描画后调用
-					"headerCallback": function(thead, data, start, end, display) {
-						//thead:dom， data:原始的datatable数据，display：当前显示排序好的datatable数据（有可能经过排序）
-						// start end ：当前dispaly数据的开始结束序号
-						$(thead).find('th').eq(0).html('Displaying ' + (end - start) + ' records');
-					},
-					// tfoot被描画后调用，通常可用于计算合计值
-					"footerCallback": function(tfoot, data, start, end, display) {
-						//tfoot:dom， data:原始的datatable数据，display：当前显示排序好的datatable数据（有可能经过排序）
-						// start end ：当前dispaly数据的开始结束序号
-						var api = this.api();
-						$(api.column(5).footer()).html(
-							api.column(5).data().reduce(function(a, b) {
-								return a + b;
-							}, 0)
-						);
-					},
-					// 初始化，描画都已经完成，常用于ajax
-					"initComplete": function(settings, json) {
-						$('div.loading').remove();
-					},
-					// 每次DataTable描画后都要调用，调用这个函数时，table可能没有描画完成，
-					// 所以不要在里面操作table的dom，要操作dom应放在initComplete
-					"drawCallback": function(settings) {
-						var api = this.api();
-
-						// Output the data for the visible rows to the browser's console
-						console.log(api.rows({
-							page: 'current'
-						}).data());
-					},
-					// 这个函数可以改写数字的格式化方式
-					// 默认DataTable用 language.thousands来解析数字，“，”
-					"formatNumber": function(toFormat) {
-						return toFormat.toString().replace(
-							/\B(?=(\d{3})+(?!\d))/g, "'"
-						);
-					}
-				});
-			});
-		</script> -->
-
-		<script type="text/javascript">
-			var _gaq = _gaq || [];
-			_gaq.push(['_setAccount', 'UA-37564768-1']);
-			_gaq.push(['_setDomainName', 'keenthemes.com']);
-			_gaq.push(['_setAllowLinker', true]);
-			_gaq.push(['_trackPageview']);
-			(function() {
-				var ga = document.createElement('script');
-				ga.type = 'text/javascript';
-				ga.async = true;
-				ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
-				var s = document.getElementsByTagName('script')[0];
-				s.parentNode.insertBefore(ga, s);
-			})();
-		</script>
 	</body>
 
 	<!-- END BODY -->
