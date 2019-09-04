@@ -40,29 +40,12 @@
 
 		<link href="media/css/uniform.default.css" rel="stylesheet" type="text/css" />
 
-		<!-- END GLOBAL MANDATORY STYLES -->
-
-		<!-- BEGIN PAGE LEVEL STYLES -->
-
 		<link rel="stylesheet" type="text/css" href="media/css/select2_metro.css" />
 
 		<link rel="stylesheet" href="media/css/DT_bootstrap.css" />
-
-		<!-- END PAGE LEVEL STYLES -->
-
 		<link rel="shortcut icon" href="media/image/favicon.ico" />
 
-		<!-- END FOOTER -->
-
-		<!-- BEGIN JAVASCRIPTS(Load javascripts at bottom, this will reduce page load time) -->
-
-		<!-- BEGIN CORE PLUGINS -->
-
 		<script src="media/js/jquery-1.10.1.min.js" type="text/javascript"></script>
-
-		<!--<script src="media/js/jquery-migrate-1.2.1.min.js" type="text/javascript"></script>-->
-
-		<!-- IMPORTANT! Load jquery-ui-1.10.1.custom.min.js before bootstrap.min.js to fix bootstrap tooltip conflict with jquery ui tooltip -->
 
 		<script src="media/js/jquery-ui-1.10.1.custom.min.js" type="text/javascript"></script>
 
@@ -127,66 +110,140 @@
 					return;
 				}
 				var action = $('#action').html();
-
+				if(action == "queryDam") {
+					tableName = $("#second").val();
+					tableNameText = $("#first").find("option:selected").text() + $("#second").find("option:selected").text();
+					//				alert(tableNameText);
+					//				alert(tableName);
+				} else {
+					tableName = undefined;
+				}
 				var num = $('#num').val();
 				var page = $('#page').html();
 				$.ajax({
-					url: getUrl(),
-					method: "post",
-					async: true,
-					timeout: 10000,
-					data: {
-						"action": action,
-						"startDate": start,
-						"endDate": end,
-						"page": page,
-						"num": num
-					},
-					dataType: "json",
-					success: function(data) {
-						if(data.result == "success") {
-							if(action == 'queryDamMw') {
-								$("#queryDamMw").empty();
-								for(var i = 0; i < data.msg.length; i++) {
-									$("#queryDamMw").append("<tr class='odd gradeX'><td style='display: none;'>" + data.msg[i].id + "</td><td><input type='checkbox' class='checkboxes' value='1' /></td><td>" + timestampToTime(data.msg[i].time) + "</td><td class='hidden-480'>" + data.msg[i].value + "</td></tr>");
+						url: getUrl(),
+						method: "post",
+						async: true,
+						timeout: 10000,
+						data: {
+							"action": action,
+							"startDate": start,
+							"endDate": end,
+							"page": page,
+							"num": num,
+							"tableName": tableName,
+						},
+						dataType: "json",
+						success: function(data) {
+							if(data.result == "success") {
+								if(action == 'queryDamMw') {
+									$("#queryDamMw").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamMw").append("<tr class='odd gradeX'><td style='display: none;'>" + data.msg[i].id + "</td><td><input type='checkbox' class='checkboxes' value='1' /></td><td>" + timestampToTime(data.msg[i].time) + "</td><td class='hidden-480'>" + data.msg[i].value + "</td></tr>");
+									}
+								} else if(action == 'queryDamOutPlan') {
+									$("#queryDamOutPlan").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamOutPlan").append("<tr class='odd gradeX'>	<td><input type='checkbox' class='checkboxes' value='1' /></td><div style='display: none;'>" + data.msg[i].id + "</div><td>" + timestampToTime(data.msg[i].time) + "</td><td class='hidden-480'>" + data.msg[i].value + "</td></tr>");
+									}
+								} else if(action == 'queryDamAvePrice') {
+									$("#queryDamAvePrice").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamAvePrice").append("<tr class='odd gradeX'><td><input type='checkbox' class='checkboxes' value='1' /></td><div style='display: none;'>" + data.msg[i].id + "</div><td>" + timestampToTime(data.msg[i].time) + "</td><td class='hidden-480'>" + data.msg[i].winPrice + "</td><td class='hidden-480'>" + data.msg[i].geAvePrice + "</td><td class='hidden-480'>" + data.msg[i].userAvePrice + "</td></tr>");
+									}
+								} else if(action == 'queryDamLoadForecast') {
+									$("#queryDamLoadForecast").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										$("#queryDamLoadForecast").append("	<tr class='odd gradeX'><td><input type='checkbox' class='checkboxes' value='1' /></td><div style='display: none;'>" + data.msg[i].id + "</div><td>" + timestampToTime(data.msg[i].time) + "</td><td>" + data.msg[i].value + "</td></tr>");
+									}
+								} else if(action == 'queryDam') {
+									$("#queryDam").empty();
+									for(var i = 0; i < data.msg.length; i++) {
+										if(data.msg[i].state=="0"){
+											state="停";
+										}else{
+											state="启";
+										}
+										$("#queryDam").append("<tr class = 'odd gradeX' > <td> <input type = 'checkbox'class = 'checkboxes'value = '1' / > </td><div style='display: none;'>"+data.msg[i].id+"</div> <td> "+timestampToTime(data.msg[i].time) +" </td><td class='hidden-480'>"+tableNameText+"</td > <td class = 'hidden-480'>"+state+"</td><td class='hidden-480'>"+data.msg[i].outputPower+"</td > <td class = 'hidden-480'> "+data.msg[i].nodePrice+" </td><td class='hidden-480'>"+data.msg[i].sysPrice+"</td> <td class = 'hidden-480' > "+data.msg[i].blockPrice+" </td><td class='hidden-480'>"+data.msg[i].lossPrice+"</td > </tr>");
+										}
+									}
+									return;
+								} else if(data.result == "fail") {
+									alert(data.msg);
+									return;
 								}
+							},
+							error: function(xhr) {
+
 							}
-							return;
-						} else if(data.result == "fail") {
-							alert(data.msg);
-							return;
-						}
-					},
-					error: function(xhr) {
+						});
 
-					}
-				});
-
-			}
-
-			function prePage() {
-				var page = $('#page').html();
-				if(page == 1) {
-					alert("当前已是第一页");
-					return;
 				}
-				$('#page').html(page - 1);
-				query();
-			}
 
-			function nextPage() {
-				var page = $('#page').html();
-				page = parseInt(page) + 1;
-				$('#page').html(page);
-				query();
-			}
+				function prePage() {
+					var page = $('#page').html();
+					if(page == 1) {
+						alert("当前已是第一页");
+						return;
+					}
+					$('#page').html(page - 1);
+					query();
+				}
 
-			function tab1() {
-				$('#action').html("queryDamMw");
-			}
-			function tab2() {
-				$('#action').html("queryDamOutPlan");
-			}
+				function nextPage() {
+					var page = $('#page').html();
+					page = parseInt(page) + 1;
+					$('#page').html(page);
+					query();
+				}
+
+				function tab1() {
+					$('#action').html("queryDamMw");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab2() {
+					$('#action').html("queryDamOutPlan");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab3() {
+					$('#action').html("queryDamAvePrice");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab4() {
+					$('#action').html("queryDamLoadForecast");
+					$("#damPlant").css("display", "none");
+				}
+
+				function tab5() {
+					$('#action').html("queryDam");
+					$("#damPlant").css("display", "block");
+				}
+
+				function change() {
+					var x = document.getElementById("first");
+					var y = document.getElementById("second");
+					y.options.length = 0; // 清除second下拉框的所有内容
+					if(x.selectedIndex == 0) {
+						y.options.add(new Option("#1", 0, false, true));
+						y.options.add(new Option("#2", 1)); // 默认选中省会城市
+					}
+
+					if(x.selectedIndex == 1) {
+						y.options.add(new Option("#1", 2, false, true));
+						y.options.add(new Option("#2", 3)); // 默认选中省会城市
+						y.options.add(new Option("#3", 4));
+						y.options.add(new Option("#4", 5));
+					}
+					if(x.selectedIndex == 2) {
+						y.options.add(new Option("#11", 6, false, true));
+						y.options.add(new Option("#12", 7)); // 默认选中省会城市
+						y.options.add(new Option("#21", 8));
+						y.options.add(new Option("#22", 9));
+					}
+				}
 		</script>
 
 	</head>
@@ -234,6 +291,7 @@
 							</a>
 
 							<ul class="dropdown-menu">
+
 								<!--
 						<li><a href="extra_profile.html"><i class="icon-user"></i> My Profile</a></li>
 				
@@ -257,6 +315,7 @@
 							</ul>
 
 						</li>
+						<!-- END USER LOGIN DROPDOWN -->
 
 					</ul>
 
@@ -550,37 +609,55 @@
 
 								</div>
 								<div id="" style="margin-left: 10px;line-height: 30px; ">
-									<select id="num" style="width: 100px;">
-										<option value="10">10</option>
-										<option value="20">20</option>
-										<option value="25">25</option>
-										<option value="30">30</option>
-									</select>每页
+									<div id="" style="float: left;">
+										<select id="num" style="width: 100px;">
+											<option value="10">10</option>
+											<option value="20">20</option>
+											<option value="25">25</option>
+											<option value="30">30</option>
+										</select>每页
+									</div>
+
+									<div id="damPlant" style="float: left;margin-left:50px;display: none;">
+
+										<select id="first" style="width: 100px;" onChange="change()">
+											<option selected="selected">长兴</option>
+											<option>玉环</option>
+											<option>桐乡</option>
+										</select>
+
+										<select id="second" style="width: 100px;">
+											<option selected="selected" value="0">#1机</option>
+											<option value="1">#2机</option>
+										</select>
+
+									</div>
 									<button type="button" class="btn btn-sm btn-warning" style="height: 30px;margin-left: 50px ;" onclick="query()">开始查询</button>
 								</div>
+
 								<span id='action' style="display: none;">queryDamMw</span>
 								<div class="portlet-body">
 
-									<ul id="tableName" class="nav nav-tabs" >
+									<ul id="tableName" class="nav nav-tabs">
 
 										<li class="active" onclick="tab1()">
 											<a href="#tab_1_1" data-toggle="tab">系统固定出力</a>
 										</li>
 
 										<li>
-											<a href="#tab_1_2" onclick="tab2()"data-toggle="tab">外来电计划</a>
+											<a href="#tab_1_2" onclick="tab2()" data-toggle="tab">外来电计划</a>
 										</li>
 
 										<li>
-											<a href="#tab_1_3" onclick="tab3()"data-toggle="tab">日前出清平均电价</a>
+											<a href="#tab_1_3" onclick="tab3()" data-toggle="tab">日前出清平均电价</a>
 										</li>
 
 										<li>
-											<a href="#tab_1_4"onclick="tab4()" data-toggle="tab">系统负荷预测</a>
+											<a href="#tab_1_4" onclick="tab4()" data-toggle="tab">系统负荷预测</a>
 										</li>
 
 										<li>
-											<a href="#tab_1_5" onclick="tab5()"data-toggle="tab">各机组日前出清结果</a>
+											<a href="#tab_1_5" onclick="tab5()" data-toggle="tab">各机组日前出清结果</a>
 										</li>
 
 									</ul>
@@ -631,11 +708,9 @@
 													<tr class="odd gradeX">
 
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>00:30</td>
-
 														<td class="hidden-480">23571</td>
-
 													</tr>
 
 												</tbody>
@@ -664,20 +739,15 @@
 
 												</thead>
 
-												<tbody>
+												<tbody id="queryDamAvePrice">
 
 													<tr class="odd gradeX">
-
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>0:45:00</td>
-
 														<td class="hidden-480">26257.98</td>
-
 														<td class="hidden-480">360.00</td>
-
 														<td class="hidden-480">360.00</td>
-
 													</tr>
 
 												</tbody>
@@ -702,16 +772,13 @@
 
 												</thead>
 
-												<tbody>
+												<tbody id="queryDamLoadForecast">
 
 													<tr class="odd gradeX">
-
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>01:00</td>
-
 														<td>22908</td>
-
 													</tr>
 
 												</tbody>
@@ -732,24 +799,29 @@
 
 														<th class="hidden-480">机组名称</th>
 
-														<th class="hidden-480">日前出清中标电量(MW)</th>
-
+														<th class="hidden-480">机组启停状态</th>
+														<th class="hidden-480">机组出力(MW)</th>
+														<th class="hidden-480">电能节点价格(元/MWh)</th>
+														<th class="hidden-480">系统电能价格(元/MWh)</th>
+														<th class="hidden-480">阻塞价格</th>
+														<th class="hidden-480">网损价格</th>
 													</tr>
 
 												</thead>
 
-												<tbody>
+												<tbody id='queryDam'>
 
 													<tr class="odd gradeX">
-
 														<td><input type="checkbox" class="checkboxes" value="1" /></td>
-
+														<div style="display: none;">id</div>
 														<td>0:45:00</td>
-
 														<td class="hidden-480">玉环1</td>
-
 														<td class="hidden-480">26257.98</td>
-
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
+														<td class="hidden-480">26257.98</td>
 													</tr>
 
 												</tbody>
